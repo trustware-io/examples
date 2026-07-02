@@ -1,0 +1,99 @@
+{
+  "info": {
+    "name": "Trustware V1 API Examples",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "apiBase", "value": "https://api.trustware.io/api/v1" },
+    { "key": "apiKey", "value": "tw_live_or_test_key" },
+    { "key": "fromChain", "value": "8453" },
+    { "key": "toChain", "value": "8453" },
+    { "key": "fromToken", "value": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" },
+    { "key": "toToken", "value": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" },
+    { "key": "fromAmount", "value": "1000000000000000" },
+    { "key": "fromAddress", "value": "0x0000000000000000000000000000000000000000" },
+    { "key": "toAddress", "value": "0x0000000000000000000000000000000000000000" },
+    { "key": "intentId", "value": "replace_with_intent_id" },
+    { "key": "txHash", "value": "0xreplace_with_source_tx_hash" }
+  ],
+  "item": [
+    {
+      "name": "Validate SDK Key",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-Key", "value": "{{apiKey}}" }],
+        "url": "{{apiBase}}/sdk/validate"
+      }
+    },
+    {
+      "name": "List Chains",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{apiBase}}/routes/chains"
+      }
+    },
+    {
+      "name": "List Tokens",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{apiBase}}/routes/tokens?chainId={{toChain}}"
+      }
+    },
+    {
+      "name": "Quote Route",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-API-Key", "value": "{{apiKey}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fromChain\": \"{{fromChain}}\",\n  \"toChain\": \"{{toChain}}\",\n  \"fromToken\": \"{{fromToken}}\",\n  \"toToken\": \"{{toToken}}\",\n  \"fromAmount\": \"{{fromAmount}}\",\n  \"fromAddress\": \"{{fromAddress}}\",\n  \"toAddress\": \"{{toAddress}}\",\n  \"slippageBps\": 100\n}"
+        },
+        "url": "{{apiBase}}/routes/quote"
+      }
+    },
+    {
+      "name": "Build Route",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-API-Key", "value": "{{apiKey}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fromChain\": \"{{fromChain}}\",\n  \"toChain\": \"{{toChain}}\",\n  \"fromToken\": \"{{fromToken}}\",\n  \"toToken\": \"{{toToken}}\",\n  \"fromAmount\": \"{{fromAmount}}\",\n  \"fromAddress\": \"{{fromAddress}}\",\n  \"toAddress\": \"{{toAddress}}\",\n  \"slippageBps\": 100\n}"
+        },
+        "url": "{{apiBase}}/routes/route"
+      }
+    },
+    {
+      "name": "Submit Receipt",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-API-Key", "value": "{{apiKey}}" },
+          { "key": "Idempotency-Key", "value": "{{txHash}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"txHash\": \"{{txHash}}\"\n}"
+        },
+        "url": "{{apiBase}}/route-intent/{{intentId}}/receipt"
+      }
+    },
+    {
+      "name": "Get Intent Status",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-Key", "value": "{{apiKey}}" }],
+        "url": "{{apiBase}}/route-intent/{{intentId}}/status"
+      }
+    }
+  ]
+}

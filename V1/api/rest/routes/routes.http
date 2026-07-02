@@ -1,0 +1,67 @@
+@apiBase = https://api.trustware.io/api/v1
+@apiKey = tw_live_or_test_key
+@fromChain = 8453
+@toChain = 8453
+@fromToken = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+@toToken = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+@fromAmount = 1000000000000000
+@fromAddress = 0x0000000000000000000000000000000000000000
+@toAddress = 0x0000000000000000000000000000000000000000
+@intentId = replace_with_intent_id
+@txHash = 0xreplace_with_source_tx_hash
+
+### Validate API key
+GET {{apiBase}}/sdk/validate
+X-API-Key: {{apiKey}}
+
+### List chains
+GET {{apiBase}}/routes/chains
+
+### List tokens
+GET {{apiBase}}/routes/tokens?chainId={{toChain}}
+
+### Quote route
+POST {{apiBase}}/routes/quote
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "fromChain": "{{fromChain}}",
+  "toChain": "{{toChain}}",
+  "fromToken": "{{fromToken}}",
+  "toToken": "{{toToken}}",
+  "fromAmount": "{{fromAmount}}",
+  "fromAddress": "{{fromAddress}}",
+  "toAddress": "{{toAddress}}",
+  "slippageBps": 100
+}
+
+### Build route with transaction payload
+POST {{apiBase}}/routes/route
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "fromChain": "{{fromChain}}",
+  "toChain": "{{toChain}}",
+  "fromToken": "{{fromToken}}",
+  "toToken": "{{toToken}}",
+  "fromAmount": "{{fromAmount}}",
+  "fromAddress": "{{fromAddress}}",
+  "toAddress": "{{toAddress}}",
+  "slippageBps": 100
+}
+
+### Submit receipt after broadcasting
+POST {{apiBase}}/route-intent/{{intentId}}/receipt
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+Idempotency-Key: {{txHash}}
+
+{
+  "txHash": "{{txHash}}"
+}
+
+### Poll intent status
+GET {{apiBase}}/route-intent/{{intentId}}/status
+X-API-Key: {{apiKey}}

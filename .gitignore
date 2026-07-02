@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+dist
+.env*
+!.env.example
+package-lock.json
+*.tsbuildinfo
+.DS_Store
+npm-debug.log*

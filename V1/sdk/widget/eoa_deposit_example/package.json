@@ -1,0 +1,27 @@
+{
+  "name": "@trustware-examples/eoa-deposit-next",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trustware/sdk": "^1.1.8",
+    "next": "^15.5.20",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "viem": "^2.52.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
