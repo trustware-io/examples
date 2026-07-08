@@ -120,6 +120,7 @@ function WithdrawStep({
   address: string;
   wallet?: WalletInterFaceAPI;
   balanceRefreshKey: number;
+  setBalanceRefreshKey: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const { chains } = Trustware.useChains();
 
@@ -147,15 +148,15 @@ function WithdrawStep({
     async function loadBalances() {
       setIsLoadingBalances(true);
       await Trustware.init(config);
-      const rows = (
-        await Trustware.getBalances(fromChain, address)
-      ).filter((row) => {
-        try {
-          return BigInt(row.balance || "0") > 0n;
-        } catch {
-          return false;
-        }
-      });
+      const rows = (await Trustware.getBalances(fromChain, address)).filter(
+        (row) => {
+          try {
+            return BigInt(row.balance || "0") > 0n;
+          } catch {
+            return false;
+          }
+        },
+      );
       if (cancelled) return;
 
       setBalances(rows);
@@ -197,6 +198,12 @@ function WithdrawStep({
       );
     });
   }, [toTokenState.tokens]);
+
+  const refreshBalances = useCallback(() => {
+    setLastBalanceRefresh(
+      () => `Refreshing… (${new Date().toLocaleTimeString()})`,
+    );
+  }, [setLastBalanceRefresh]);
 
   const selectedToken = balances.find(
     (row) => tokenId(row).toLowerCase() === fromToken.toLowerCase(),
@@ -293,8 +300,14 @@ function WithdrawStep({
         });
       }
 
-      const txHash = await Trustware.sendRouteTransaction(freshRoute, fromChain);
-      const receipt = await Trustware.submitReceipt(freshRoute.intentId, txHash);
+      const txHash = await Trustware.sendRouteTransaction(
+        freshRoute,
+        fromChain,
+      );
+      const receipt = await Trustware.submitReceipt(
+        freshRoute.intentId,
+        txHash,
+      );
       setLog(JSON.stringify({ txHash, receipt }, null, 2));
     } catch (error) {
       setLog(error instanceof Error ? error.message : String(error));
@@ -320,7 +333,9 @@ function WithdrawStep({
                 ? `Updated ${lastBalanceRefresh}`
                 : "Available"}
           </span>
-          <strong className={styles.balanceValue}>{availableBalanceLabel}</strong>
+          <strong className={styles.balanceValue}>
+            {availableBalanceLabel}
+          </strong>
         </div>
         <button
           type="button"
@@ -334,6 +349,14 @@ function WithdrawStep({
           }
         >
           Use max
+        </button>
+        <button
+          type="button"
+          className={styles.btnSecondary}
+          disabled={isLoadingBalances}
+          onClick={refreshBalances}
+        >
+          Refresh balances
         </button>
       </div>
       {selectedToken?.category === "native" ? (
@@ -396,7 +419,9 @@ function WithdrawStep({
         />
       </label>
       {amountExceedsBalance ? (
-        <p className={styles.notice}>Amount is higher than the spendable balance.</p>
+        <p className={styles.notice}>
+          Amount is higher than the spendable balance.
+        </p>
       ) : null}
       {needsGasWarning ? (
         <p className={styles.notice}>
@@ -527,7 +552,10 @@ function Demo() {
           </span>
           <div className={styles.walletActions}>
             {address ? (
-              <CopyAddressButton address={address} className={styles.btnSecondary} />
+              <CopyAddressButton
+                address={address}
+                className={styles.btnSecondary}
+              />
             ) : null}
             <button
               className={styles.btnSecondary}
@@ -548,6 +576,7 @@ function Demo() {
               address={address}
               wallet={wallet}
               balanceRefreshKey={balanceRefreshKey}
+              setBalanceRefreshKey={setBalanceRefreshKey}
             />
           </div>
         )}
@@ -646,7 +675,9 @@ export default function Page() {
   if (!privyAppId) {
     return (
       <main className={styles.page}>
-        <p className={styles.notice}>Set NEXT_PUBLIC_PRIVY_APP_ID in .env.local.</p>
+        <p className={styles.notice}>
+          Set NEXT_PUBLIC_PRIVY_APP_ID in .env.local.
+        </p>
       </main>
     );
   }

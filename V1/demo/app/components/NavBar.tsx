@@ -18,7 +18,10 @@ export default function NavBar() {
 
   return (
     <nav className={styles.nav}>
-      <span className={styles.brand}>Trustware</span>
+      <Link href="/" className={styles.brand}>
+        <span className={styles.brandMark} />
+        Trustware
+      </Link>
       <div className={styles.links}>
         {LINKS.map((link) => (
           <Link
