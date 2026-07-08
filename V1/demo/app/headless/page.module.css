@@ -64,6 +64,10 @@
   border-radius: 8px;
   background: #fff;
   min-height: 220px;
+  max-width: 100%;
   padding: 16px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
 }

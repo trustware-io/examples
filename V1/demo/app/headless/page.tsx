@@ -36,14 +36,9 @@ const env = {
   apiKey: process.env.NEXT_PUBLIC_TRUSTWARE_API_KEY || "",
   fromChain: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_CHAIN || "8453",
   toChain: process.env.NEXT_PUBLIC_TRUSTWARE_TO_CHAIN || "8453",
-  fromToken:
-    process.env.NEXT_PUBLIC_TRUSTWARE_FROM_TOKEN ||
-    "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-  toToken:
-    process.env.NEXT_PUBLIC_TRUSTWARE_TO_TOKEN ||
-    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  fromAmount:
-    process.env.NEXT_PUBLIC_TRUSTWARE_FROM_AMOUNT || "1000000000000000",
+  fromToken: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_TOKEN,
+  toToken: process.env.NEXT_PUBLIC_TRUSTWARE_TO_TOKEN,
+  fromAmount: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_AMOUNT,
   fromAddress: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_ADDRESS || "",
   toAddress: process.env.NEXT_PUBLIC_TRUSTWARE_TO_ADDRESS || "",
 };
@@ -66,7 +61,7 @@ export default function Page() {
           defaultSlippage: 1,
         },
       }) satisfies TrustwareConfigOptions,
-    []
+    [],
   );
 
   async function buildRoute() {
@@ -103,7 +98,11 @@ export default function Page() {
         <button onClick={buildRoute} disabled={loading || !env.apiKey}>
           {loading ? "Building..." : "Build route"}
         </button>
-        {!env.apiKey && <p className={styles.warning}>Set NEXT_PUBLIC_TRUSTWARE_API_KEY first.</p>}
+        {!env.apiKey && (
+          <p className={styles.warning}>
+            Set NEXT_PUBLIC_TRUSTWARE_API_KEY first.
+          </p>
+        )}
         <pre>{result}</pre>
       </section>
     </main>

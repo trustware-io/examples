@@ -16,12 +16,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  PrivyProvider,
-  usePrivy,
-  useWallets,
-  getEmbeddedConnectedWallet,
-} from "@privy-io/react-auth";
+import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
 import {
   Trustware,
   TrustwareProvider,
@@ -32,7 +27,10 @@ import {
   type TrustwareConfigOptions,
   type WalletInterFaceAPI,
 } from "@trustware/sdk";
-import { useEIP1193 } from "@trustware/sdk/wallet";
+import CopyAddressButton from "../components/CopyAddressButton";
+import { useEmbeddedWallet } from "../lib/useEmbeddedWallet";
+import { ensureErc20Allowance } from "../lib/erc20Approval";
+import { shortenAddress } from "../lib/format";
 import styles from "./page.module.css";
 
 // ---------------------------------------------------------------------------
@@ -50,63 +48,7 @@ const defaultToken =
   process.env.NEXT_PUBLIC_TRUSTWARE_TO_TOKEN ||
   "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
-type EmbeddedWallet = {
-  walletClientType?: string;
-  address?: string;
-  getEthereumProvider?: () => Promise<{
-    request(args: {
-      method: string;
-      params?: unknown[] | object;
-    }): Promise<unknown>;
-  }>;
-};
 type TokenOption = ReturnType<typeof Trustware.useTokens>["tokens"][number];
-
-// ---------------------------------------------------------------------------
-// Helper hook: find the user's Privy embedded wallet and wrap it in the
-// EIP-1193 adapter Trustware expects for signing transactions.
-// ---------------------------------------------------------------------------
-function useEmbeddedWallet() {
-  const { wallets } = useWallets();
-  const [state, setState] = useState<{
-    address: string;
-    wallet?: WalletInterFaceAPI;
-  }>({
-    address: "",
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    // Only ever resolve the user's actual Privy embedded wallet — never
-    // fall back to whatever wallet happens to be first (e.g. a connected
-    // EOA), which would silently treat the EOA as the embedded wallet.
-    const embedded = getEmbeddedConnectedWallet(
-      wallets,
-    ) as EmbeddedWallet | null;
-
-    async function load() {
-      if (!embedded?.address) {
-        setState({ address: "" });
-        return;
-      }
-      const provider = await embedded.getEthereumProvider?.();
-      if (!cancelled) {
-        setState({
-          address: embedded.address!,
-          wallet: provider ? useEIP1193(provider) : undefined,
-        });
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [wallets]);
-
-  return state;
-}
 
 // ---------------------------------------------------------------------------
 // STEP 1: DEPOSIT
@@ -275,6 +217,18 @@ function WithdrawStep({
     maxSpendableBaseUnits &&
     baseUnitsGreaterThan(amountInBaseUnits, maxSpendableBaseUnits);
 
+  // Gas is always paid in the chain's native token, never in the token
+  // being withdrawn — and the first withdrawal of a given ERC-20 usually
+  // needs an extra approval transaction. A wallet holding only an ERC-20
+  // balance (no native gas) will fail here, so flag it before the user hits
+  // a confusing on-chain revert.
+  const hasNativeGas = balances.some(
+    (row) => row.category === "native" && BigInt(row.balance || "0") > 0n,
+  );
+  const needsGasWarning = Boolean(
+    selectedToken && selectedToken.category !== "native" && !hasNativeGas,
+  );
+
   // 2. Ask Trustware for a route (quote + calldata) for this withdrawal.
   async function buildRoute() {
     if (amountExceedsBalance) {
@@ -301,9 +255,50 @@ function WithdrawStep({
   async function sendRoute() {
     if (!route || !wallet) return;
     Trustware.useWallet(wallet);
-    const txHash = await Trustware.sendRouteTransaction(route, fromChain);
-    const receipt = await Trustware.submitReceipt(route.intentId, txHash);
-    setLog(JSON.stringify({ txHash, receipt }, null, 2));
+
+    try {
+      // Cross-chain routes (this one bridges through Mayan) carry a
+      // short-lived quote, so rebuild fresh right before sending instead of
+      // executing whatever "Build route" quoted earlier. This must happen
+      // BEFORE the approval check below: different quotes can route through
+      // different contracts, so approving the old route's spender and then
+      // sending a newly-rebuilt route can leave the wrong contract approved.
+      setLog("Refreshing route before sending...");
+      const freshRoute = await Trustware.buildRoute({
+        fromChain,
+        toChain,
+        fromToken,
+        toToken,
+        fromAmount: amountInBaseUnits,
+        fromAddress: address,
+        toAddress,
+        slippageBps: 100,
+      });
+      setRoute(freshRoute);
+
+      // buildRoute() doesn't accept a permit input, so whichever contract
+      // THIS route calls (LI.FI's Diamond) still expects a standing
+      // allowance — it pulls funds with a direct ERC20 transferFrom, not
+      // Permit2. For non-native tokens, approve it directly if needed.
+      const spender = freshRoute.txReq?.to || freshRoute.txReq?.target;
+      if (selectedToken && selectedToken.category !== "native" && spender) {
+        await ensureErc20Allowance({
+          chainId: fromChain,
+          wallet,
+          owner: address as `0x${string}`,
+          token: fromToken as `0x${string}`,
+          spender: spender as `0x${string}`,
+          amount: BigInt(amountInBaseUnits || "0"),
+          onStep: setLog,
+        });
+      }
+
+      const txHash = await Trustware.sendRouteTransaction(freshRoute, fromChain);
+      const receipt = await Trustware.submitReceipt(freshRoute.intentId, txHash);
+      setLog(JSON.stringify({ txHash, receipt }, null, 2));
+    } catch (error) {
+      setLog(error instanceof Error ? error.message : String(error));
+    }
   }
 
   return (
@@ -403,6 +398,15 @@ function WithdrawStep({
       {amountExceedsBalance ? (
         <p className={styles.notice}>Amount is higher than the spendable balance.</p>
       ) : null}
+      {needsGasWarning ? (
+        <p className={styles.notice}>
+          This wallet has no ETH to pay gas. Withdrawing{" "}
+          {selectedToken?.symbol || "a token"} still costs gas in ETH, and the
+          first withdrawal of a token may also need a one-time approval
+          transaction. Fund the embedded wallet with a small amount of ETH
+          first.
+        </p>
+      ) : null}
 
       <label>
         Destination wallet
@@ -421,7 +425,8 @@ function WithdrawStep({
             !toToken ||
             !toAddress ||
             !amountInBaseUnits ||
-            !!amountExceedsBalance
+            !!amountExceedsBalance ||
+            needsGasWarning
           }
           onClick={() => void buildRoute()}
         >
@@ -520,12 +525,17 @@ function Demo() {
               "No embedded wallet yet"
             )}
           </span>
-          <button
-            className={styles.btnSecondary}
-            onClick={authenticated ? logout : login}
-          >
-            {authenticated ? "Log out" : "Log in"}
-          </button>
+          <div className={styles.walletActions}>
+            {address ? (
+              <CopyAddressButton address={address} className={styles.btnSecondary} />
+            ) : null}
+            <button
+              className={styles.btnSecondary}
+              onClick={authenticated ? logout : login}
+            >
+              {authenticated ? "Log out" : "Log in"}
+            </button>
+          </div>
         </div>
 
         {blockingMessage ? (
@@ -599,10 +609,6 @@ function baseUnitsGreaterThan(a: string, b: string) {
   } catch {
     return false;
   }
-}
-
-function shortenAddress(value: string) {
-  return `${value.slice(0, 6)}...${value.slice(-4)}`;
 }
 
 /** Converts a base-unit balance (e.g. wei) into a human-readable string. */

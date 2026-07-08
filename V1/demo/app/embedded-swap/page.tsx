@@ -16,20 +16,16 @@
  * into your own app.
  */
 
-import { useEffect, useMemo, useState } from "react";
-import {
-  PrivyProvider,
-  usePrivy,
-  useWallets,
-  getEmbeddedConnectedWallet,
-} from "@privy-io/react-auth";
+import { useMemo } from "react";
+import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
 import {
   TrustwareProvider,
   TrustwareWidget,
   type TrustwareConfigOptions,
-  type WalletInterFaceAPI,
 } from "@trustware/sdk";
-import { useEIP1193 } from "@trustware/sdk/wallet";
+import CopyAddressButton from "../components/CopyAddressButton";
+import { useEmbeddedWallet } from "../lib/useEmbeddedWallet";
+import { shortenAddress } from "../lib/format";
 import styles from "./page.module.css";
 
 // ---------------------------------------------------------------------------
@@ -45,17 +41,6 @@ const toChain = process.env.NEXT_PUBLIC_TRUSTWARE_TO_CHAIN || "8453";
 const toToken =
   process.env.NEXT_PUBLIC_TRUSTWARE_TO_TOKEN ||
   "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-
-type EmbeddedWallet = {
-  walletClientType?: string;
-  address?: string;
-  getEthereumProvider?: () => Promise<{
-    request(args: {
-      method: string;
-      params?: unknown[] | object;
-    }): Promise<unknown>;
-  }>;
-};
 
 const config = {
   apiKey: process.env.NEXT_PUBLIC_TRUSTWARE_API_KEY || "",
@@ -79,57 +64,11 @@ const config = {
 } satisfies TrustwareConfigOptions;
 
 // ---------------------------------------------------------------------------
-// Helper hook: find the user's Privy embedded wallet and wrap it in the
-// EIP-1193 adapter Trustware expects for signing transactions.
-// ---------------------------------------------------------------------------
-function useEmbeddedWallet() {
-  const { wallets } = useWallets();
-  const [state, setState] = useState<{
-    address: string;
-    wallet?: WalletInterFaceAPI;
-  }>({
-    address: "",
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    // Only ever resolve the user's actual Privy embedded wallet — never
-    // fall back to whatever wallet happens to be first (e.g. a connected
-    // EOA), which would silently treat the EOA as the embedded wallet.
-    const embedded = getEmbeddedConnectedWallet(
-      wallets,
-    ) as EmbeddedWallet | null;
-
-    async function load() {
-      if (!embedded?.address) {
-        setState({ address: "" });
-        return;
-      }
-      const provider = await embedded.getEthereumProvider?.();
-      if (!cancelled) {
-        setState({
-          address: embedded.address!,
-          wallet: provider ? useEIP1193(provider) : undefined,
-        });
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [wallets]);
-
-  return state;
-}
-
-// ---------------------------------------------------------------------------
 // Page shell — wires up Privy auth, the embedded wallet, and the widget.
 // ---------------------------------------------------------------------------
 function Demo() {
   const { ready, authenticated, login, logout } = usePrivy();
-  const { wallet } = useEmbeddedWallet();
+  const { address, wallet } = useEmbeddedWallet();
 
   // Show one clear message at a time instead of the widget below it.
   const content = useMemo(() => {
@@ -158,6 +97,14 @@ function Demo() {
             <button onClick={logout}>Log out</button>
           )}
         </div>
+        {address ? (
+          <div className={styles.walletRow}>
+            <span>
+              Embedded wallet <code>{shortenAddress(address)}</code>
+            </span>
+            <CopyAddressButton address={address} className={styles.btnSecondary} />
+          </div>
+        ) : null}
         {content ? (
           <p className={styles.notice}>{content}</p>
         ) : (

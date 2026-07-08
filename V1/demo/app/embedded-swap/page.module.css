@@ -62,3 +62,34 @@
   background: #fff;
   padding: 14px;
 }
+
+.walletRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13.5px;
+  color: #4b5563;
+}
+
+.page code {
+  background: #eff4ff;
+  color: #2563eb;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.92em;
+}
+
+.page .btnSecondary {
+  background: #fff;
+  color: #111827;
+  border: 1px solid #d0d5dd;
+  font-weight: 700;
+  padding: 6px 12px;
+  font-size: 13px;
+}
