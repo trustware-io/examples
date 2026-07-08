@@ -36,9 +36,9 @@ const env = {
   apiKey: process.env.NEXT_PUBLIC_TRUSTWARE_API_KEY || "",
   fromChain: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_CHAIN || "8453",
   toChain: process.env.NEXT_PUBLIC_TRUSTWARE_TO_CHAIN || "8453",
-  fromToken: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_TOKEN,
-  toToken: process.env.NEXT_PUBLIC_TRUSTWARE_TO_TOKEN,
-  fromAmount: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_AMOUNT,
+  fromToken: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_TOKEN || "",
+  toToken: process.env.NEXT_PUBLIC_TRUSTWARE_TO_TOKEN || "",
+  fromAmount: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_AMOUNT || "0",
   fromAddress: process.env.NEXT_PUBLIC_TRUSTWARE_FROM_ADDRESS || "",
   toAddress: process.env.NEXT_PUBLIC_TRUSTWARE_TO_ADDRESS || "",
 };
