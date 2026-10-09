@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {encodeEventTopics,encodeAbiParameters} from 'viem';
+import {execute} from '../lib/wallet.mjs';
+import {depositProof,depositEvent,verifyDestination} from '../lib/destination.mjs';
+import {fresh,buildBody} from '../lib/core.mjs';
+import {config} from '../lib/config.mjs';
+const address=n=>'0x'+n.repeat(40),hash='0x'+'a'.repeat(64);
+const record={vault:address('1'),account:address('2'),fundAmount:'50',destinationChain:'1'};
+const log={address:record.vault,topics:encodeEventTopics({abi:depositEvent,eventName:'Deposit',args:{sender:address('3'),owner:record.account}}),data:encodeAbiParameters([{type:'uint256'},{type:'uint256'}],[50n,48n])};
+const receipt=()=>({status:'success',transactionHash:hash,logs:[log]});
+test('unsupported Web Locks and occupied cross-tab lock fail before accessing wallet',async()=>{await assert.rejects(execute({},null),/Web Locks/);await assert.rejects(execute({},{request:async(_n,_o,fn)=>fn(null)}),/Another tab/);});
+test('Spice public reference cannot authorize execution',()=>{assert.equal(config.vault.chainId,'1');assert.ok(config.sources.length);assert.throws(()=>buildBody(config,{}),/verified vault/);assert.ok(config.sources.every(c=>!c.routers.length&&!c.spenders.length));});
+test('expired route and changed signer fail closed',()=>{assert.throws(()=>fresh({created:0,input:{account:record.account}},record.account,60000),/expired/);assert.throws(()=>fresh({created:0,input:{account:record.account}},address('3'),1),/account/);});
+test('Deposit event verifies exact vault receiver assets and positive shares, not route attribution',()=>{assert.equal(depositProof(receipt(),record,hash).shares,'48');assert.match(depositProof(receipt(),record,hash).message,/attribution UNVERIFIED/);for(const r of [{...receipt(),status:'reverted'},{...receipt(),transactionHash:'0x'+'b'.repeat(64)},{...receipt(),logs:[]},{...receipt(),logs:[log,log]},{...receipt(),logs:[{...log,address:address('4')}]}])assert.throws(()=>depositProof(r,record,hash));assert.throws(()=>depositProof(receipt(),{...record,account:address('4')},hash));assert.throws(()=>depositProof(receipt(),{...record,fundAmount:'51'},hash));});
+test('destination verification rejects wrong RPC chain and noncanonical receipt',async()=>{const c={vault:{address:record.vault,chainId:'1'}};await assert.rejects(verifyDestination(c,record,hash,{getChainId:async()=>2}),/chain mismatch/);await assert.rejects(verifyDestination(c,record,hash,{getChainId:async()=>1,getTransactionReceipt:async()=>({...receipt(),blockHash:hash,blockNumber:1n}),getBlock:async()=>({hash:'0x'+'b'.repeat(64)})}),/canonical/);});

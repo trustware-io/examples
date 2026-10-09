@@ -13,6 +13,7 @@ Runnable examples for integrating Trustware through the React/TypeScript SDK or 
 ### SDK
 
 - [Headless Next.js example](./V1/sdk/headless) - build routes with the SDK core API without the widget.
+- [Synchronous vault deposit](./V1/sdk/headless-vault-deposit) - standalone Spice USDC deposit UI with server-side headless SDK routing; live execution requires corridor configuration.
 - [EOA deposit widget](./V1/sdk/widget/eoa_deposit_example) - injected/browser wallet deposit flow.
 - [EOA swap widget](./V1/sdk/widget/eoa_swap_example) - injected/browser wallet swap flow.
 - [Embedded swap widget](./V1/sdk/widget/embedded_swap_example) - Privy-style embedded wallet swap flow.
@@ -21,6 +22,7 @@ Runnable examples for integrating Trustware through the React/TypeScript SDK or 
 ### REST API
 
 - [REST overview](./V1/api/rest) - language-neutral REST examples for direct backend integrations.
+- [Synchronous vault deposit](./V1/api/rest/vault-deposit) - standalone Spice USDC deposit UI using direct REST calls; live execution requires corridor configuration.
 - [Routes API curl examples](./V1/api/rest/routes/routes.curl.sh) - validate a key, list chains/tokens, quote, build a route, submit a receipt, and poll status.
 - [Data API curl examples](./V1/api/rest/data/data.curl.sh) - wallet balances, transaction history, and price lookups.
 - [HTTP requests](./V1/api/rest/routes/routes.http) - the same route flow in editor-friendly `.http` format.
