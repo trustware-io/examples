@@ -28,6 +28,10 @@ Runnable examples for integrating Trustware through the React/TypeScript SDK or 
 - [HTTP requests](./V1/api/rest/routes/routes.http) - the same route flow in editor-friendly `.http` format.
 - [Postman collection](./V1/api/rest/postman/trustware-v1.postman_collection.json) - importable collection for the v1 routes and data APIs.
 
+### Webhooks
+
+- [Webhook receiver](./V1/api/webhooks/receiver) - local Node.js endpoint that verifies Standard Webhooks signatures and shows deliveries live; a test tool, not a production handler.
+
 ## API version
 
 The examples use the canonical v1 paths under:
