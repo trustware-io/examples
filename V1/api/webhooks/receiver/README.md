@@ -45,6 +45,7 @@ This receiver does not implement the [minimal handler](https://docs.trustware.io
 - **Test events are recorded like real ones**, labeled `test event`. A production handler must not act on `test: true`.
 - **`events.jsonl` is a local log, not processing state.** It grows without limit and holds full payloads, including wallet addresses and transaction hashes. It is git-ignored; don't share it. `/events` and `/rejections` are in memory and reset on restart.
 - **The viewer has no authentication.**
+- **No resource-exhaustion protection.** This diagnostic receiver has no rate limiting or caps on its in-memory event/rejection history or local log. Requests can consume CPU and memory; accepted signed deliveries, including replays within the timestamp tolerance, also grow the log. Keep the default loopback binding. If you use a tunnel, use a test project, keep the session short-lived, and stop it when finished. Do not expose this example as an unattended public service.
 
 A production handler verifies, durably drops seen `webhook-id`s, ignores an equal or lower `sequence` per route intent, returns `2xx` within 15 seconds, and treats [`/status`](https://docs.trustware.io/api-reference/status) as the source of truth. See [Delivery and retries](https://docs.trustware.io/webhooks/delivery).
 
