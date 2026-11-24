@@ -24,7 +24,7 @@ WEBHOOK_SECRET='whsec_...' npm start
 
 ## Receive real deliveries (optional)
 
-Trustware delivers only to a public `https` URL on port 443 ([URL requirements](https://docs.trustware.io/webhooks/delivery#webhook-url-requirements)), so a local receiver needs a tunnel. `npm run tunnel` runs `ngrok http 8787` and needs your own ngrok install and account.
+Trustware delivers only to a public `https` URL on port 443 ([URL requirements](https://docs.trustware.io/webhooks/delivery#webhook-url-requirements)), so a local receiver needs a tunnel. `npm run tunnel` runs `ngrok http 127.0.0.1:8787` and needs your own ngrok install and account.
 
 > **Exposure:** a tunnel publishes the whole server, not just `/webhooks`. Anyone with the URL can read `/`, `/events` and `/rejections`, which show delivery payloads. Use a test project, and stop the tunnel when you're done.
 

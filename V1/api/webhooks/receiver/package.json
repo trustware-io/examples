@@ -5,7 +5,7 @@
   "description": "Receives Trustware integrator webhooks, verifies their Standard Webhooks signature, and records each event.",
   "scripts": {
     "start": "node server.mjs",
-    "tunnel": "ngrok http 8787",
+    "tunnel": "ngrok http 127.0.0.1:8787",
     "test": "node --test test/*.test.mjs"
   },
   "engines": {
