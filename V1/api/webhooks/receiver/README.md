@@ -41,7 +41,7 @@ Real route intents then produce events such as `route_intent.submitted`, `route_
 This receiver does not implement the [minimal handler](https://docs.trustware.io/webhooks/overview#what-you-need-to-handle) a production integration needs:
 
 - **Duplicates are labeled, not dropped.** A repeated `webhook-id` still gets `204` and is still logged. Seen ids are kept in memory and reset on restart, so this is not deduplication for business actions.
-- **`sequence` is displayed, not enforced.** Events are listed in arrival order. Nothing ignores an older `sequence` for the same `data.intent_id`.
+- **`sequence` is displayed, not enforced.** Events are listed in arrival order. Nothing ignores an older `sequence` for the same route intent (`data.intentId` on a `v2` URL, `data.intent_id` on `v1`).
 - **Test events are recorded like real ones**, labeled `test event`. A production handler must not act on `test: true`.
 - **`events.jsonl` is a local log, not processing state.** It grows without limit and holds full payloads, including wallet addresses and transaction hashes. It is git-ignored; don't share it. `/events` and `/rejections` are in memory and reset on restart.
 - **The viewer has no authentication.**
@@ -55,4 +55,4 @@ A production handler verifies, durably drops seen `webhook-id`s, ignores an equa
 npm test
 ```
 
-The tests use the [docs test vector](https://docs.trustware.io/webhooks/verify-signatures#test-vector) with a pinned clock: a valid signature, a two-signature rotation, a tampered body, the wrong secret, a timestamp outside the 5 minute tolerance, a duplicate id and an unknown type, plus the viewer page and startup checks. No live delivery is made.
+The tests use the docs test vectors for [`v2`](https://docs.trustware.io/webhooks/verify-signatures#test-vector) and [`v1`](https://docs.trustware.io/webhooks/v1/verify-signatures#test-vector) with a pinned clock: a valid signature, a two-signature rotation, a tampered body, the wrong secret, a timestamp outside the 5 minute tolerance, a duplicate id and an unknown type, plus the viewer page and startup checks. No live delivery is made.
