@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { Webhook } from "standardwebhooks";
 import { createApp } from "../app.mjs";
 
-// The test vector from the Trustware docs (webhooks/verify-signatures).
+// The v1 test vector from the Trustware docs (webhooks/v1/verify-signatures).
 const VECTOR = {
   secret: "whsec_AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
   rotatedSecret: "whsec_ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8=",
@@ -16,6 +16,13 @@ const VECTOR = {
   signature: "v1,sbS7GSClJCsZ7SSApW5El8T5YQX8iAw6MbNqsC8I1L4=",
   rotationSignature:
     "v1,sbS7GSClJCsZ7SSApW5El8T5YQX8iAw6MbNqsC8I1L4= v1,7UkMaBGrsLRtlYA83JdeAm4quCwy4DPbFInDwHGtwac=",
+};
+
+// The v2 test vector from the Trustware docs (webhooks/verify-signatures).
+// Same secret, id and timestamp; data is camelCase.
+const V2_VECTOR = {
+  body: '{"type":"route_intent.expired","timestamp":"2026-11-05T12:00:00Z","apiVersion":"v2","sequence":1,"test":true,"data":{"intentId":"00000000-0000-0000-0000-000000000000","status":"expired","intentStatus":"expired","createDate":"2026-11-04T11:00:00Z","expiresAt":"2026-11-04T11:30:00Z"}}',
+  signature: "v1,Xw4ur+aCyIs/FsncrClPBK8ikC1UdhdN3sEbNP+IkRU=",
 };
 
 let server;
@@ -81,6 +88,16 @@ describe("webhook receiver", () => {
     const listed = await (await fetch(`${baseURL}/events`)).json();
     assert.equal(listed.length, 1);
     assert.equal(listed[0].webhook_id, VECTOR.id);
+  });
+
+  it("accepts the v2 docs test vector and logs its camelCase intentId", async () => {
+    await start(VECTOR.secret);
+    const res = await deliver({ body: V2_VECTOR.body, signature: V2_VECTOR.signature });
+    assert.equal(res.status, 204);
+    assert.deepEqual(recorded()[0].envelope, JSON.parse(V2_VECTOR.body));
+    assert.deepEqual(lines, [
+      "VERIFIED route_intent.expired seq=1 test=true intent=00000000-0000-0000-0000-000000000000 status=expired",
+    ]);
   });
 
   it("accepts a rotation delivery with the new secret", async () => {

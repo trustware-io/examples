@@ -78,13 +78,15 @@ export function createApp({ secret, logPath, log = console.log }) {
       appendFileSync(logPath, JSON.stringify(record) + "\n");
 
       const data = envelope.data ?? {};
+      // v2 URLs send camelCase data, v1 URLs snake_case.
+      const intentId = data.intentId ?? data.intent_id;
       log(
         [
           duplicate ? "DUPLICATE" : "VERIFIED",
           envelope.type,
           `seq=${envelope.sequence}`,
           envelope.test ? "test=true" : null,
-          data.intent_id ? `intent=${data.intent_id}` : null,
+          intentId ? `intent=${intentId}` : null,
           data.status ? `status=${data.status}` : null,
           record.known_type ? null : "UNKNOWN-TYPE",
         ]
